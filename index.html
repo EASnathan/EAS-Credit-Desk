@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CreditDesk — CF Boutique Platform</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+:root{
+  --ink:#1a1a18;--ink2:#3d3d38;--ink3:#6b6b64;
+  --paper:#f5f3ee;--paper2:#ece9e2;--paper3:#e2dfd6;
+  --gold:#b8860b;--gold2:#d4a017;--gold3:#fdf6e3;
+  --red:#8b1a1a;--red2:#fdf2f2;
+  --green:#1a4a2e;--green2:#f2fdf6;
+  --blue:#0c3d6b;--blue2:#e8f2fb;
+  --teal:#085041;--teal2:#e1f5ee;
+  --purple:#3c3489;--purple2:#eeedfe;
+  --coral:#712b13;--coral2:#faece7;
+  --pink:#72243e;--pink2:#fbeaf0;
+  --border:#ccc9be;
+  --mono:'DM Mono',monospace;
+  --serif:'DM Serif Display',serif;
+  --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.hdr{background:var(--ink);color:var(--paper);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);flex-shrink:0;}
+.hdr-l{display:flex;align-items:baseline;gap:12px;}
+.hdr-title{font-family:var(--serif);font-size:20px;color:var(--paper);}
+.hdr-sub{font-family:var(--mono);font-size:10px;color:var(--gold2);letter-spacing:.12em;text-transform:uppercase;}
+.hdr-r{display:flex;align-items:center;gap:10px;}
+.deal-mode-sel{background:transparent;border:1px solid var(--gold);color:var(--gold2);font-family:var(--mono);font-size:10px;padding:4px 10px;letter-spacing:.08em;cursor:pointer;outline:none;}
+.deal-mode-sel option{background:var(--ink);color:var(--paper);}
+.hdr-badge{font-family:var(--mono);font-size:10px;color:var(--gold2);border:1px solid var(--gold);padding:3px 10px;letter-spacing:.1em;}
+
+/* STAGE NAV */
+.stage-nav{display:flex;background:var(--paper2);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
+.stage-tab{display:flex;align-items:center;gap:7px;padding:10px 16px;cursor:pointer;border-right:1px solid var(--border);white-space:nowrap;transition:background .15s;border-bottom:2px solid transparent;min-width:0;}
+.stage-tab:hover{background:var(--paper3);}
+.stage-tab.active{background:var(--paper);border-bottom:2px solid var(--gold);}
+.stage-tab.done .st-num{background:var(--green);color:#fff;}
+.stage-tab.active .st-num{background:var(--gold);color:var(--ink);}
+.st-num{font-family:var(--mono);font-size:10px;width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:500;}
+.st-label{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);}
+.stage-tab.active .st-label{color:var(--ink);}
+
+/* BODY LAYOUT */
+.body{display:flex;flex:1;min-height:0;}
+.sidebar{width:300px;background:var(--paper2);border-right:1px solid var(--border);padding:20px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:16px;}
+.main{flex:1;padding:28px 36px;overflow-y:auto;}
+
+/* DEAL CONTEXT STRIP */
+.deal-strip{background:var(--ink);color:var(--paper);padding:8px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;display:flex;gap:20px;flex-wrap:wrap;align-items:center;flex-shrink:0;}
+.ds-item{color:var(--gold2);}
+.ds-item span{color:var(--paper);}
+
+/* SIDEBAR ELEMENTS */
+.s-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;}
+.s-input,.s-select,.s-textarea{width:100%;background:var(--paper);border:1px solid var(--border);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;transition:border-color .2s;}
+.s-input:focus,.s-select:focus,.s-textarea:focus{border-color:var(--gold);}
+.s-textarea{resize:vertical;min-height:60px;}
+.s-group{display:flex;flex-direction:column;gap:4px;}
+
+/* UPLOAD */
+.upzone{border:1.5px dashed var(--border);background:var(--paper);padding:14px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.upzone:hover,.upzone.drag{border-color:var(--gold);background:#faf8f2;}
+.upzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upzone-txt{font-size:12px;color:var(--ink3);}
+.flist{display:flex;flex-direction:column;gap:3px;margin-top:8px;}
+.fitem{display:flex;align-items:center;gap:6px;background:var(--paper3);padding:5px 8px;font-family:var(--mono);font-size:10px;color:var(--ink2);}
+.frm{margin-left:auto;cursor:pointer;color:var(--red);font-size:13px;}
+
+/* SCOPE CHECKS */
+.scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.sc-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--border);background:var(--paper);cursor:pointer;font-size:12px;color:var(--ink2);user-select:none;transition:all .15s;}
+.sc-item:has(input:checked){border-color:var(--gold);background:var(--gold3);color:var(--ink);}
+.sc-item input{accent-color:var(--gold);width:12px;height:12px;}
+
+/* RUN BUTTON */
+.btn-run{background:var(--gold);color:var(--ink);border:none;padding:13px 20px;font-family:var(--serif);font-size:16px;cursor:pointer;width:100%;transition:background .2s;}
+.btn-run:hover{background:var(--gold2);}
+.btn-run:disabled{opacity:.4;cursor:not-allowed;}
+
+/* MAIN AREA */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;color:var(--ink3);text-align:center;gap:10px;}
+.empty-g{font-size:40px;opacity:.2;}
+.empty-t{font-family:var(--serif);font-size:22px;color:var(--ink2);}
+.empty-d{font-size:13px;max-width:340px;line-height:1.7;}
+
+/* LOADING */
+.loading{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:14px;}
+.loading.on{display:flex;}
+.lbar-w{width:260px;height:2px;background:var(--paper3);position:relative;overflow:hidden;}
+.lbar{height:2px;background:var(--gold);position:absolute;left:-40%;width:40%;animation:lb 1.4s ease-in-out infinite;}
+@keyframes lb{0%{left:-40%}100%{left:110%}}
+.llabel{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.1em;}
+.lsteps{display:flex;flex-direction:column;gap:5px;width:260px;}
+.lstep{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px;}
+.lstep.done{color:var(--green);}
+.lstep.act{color:var(--gold);}
+
+/* OUTPUT AREA */
+.out{display:none;}
+.out.on{display:block;}
+
+/* MEMO HEADER */
+.memo-hdr{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+.memo-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+.memo-title{font-family:var(--serif);font-size:28px;line-height:1.2;}
+.memo-meta{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap;}
+.mm-item{font-family:var(--mono);font-size:11px;color:var(--ink3);}
+.mm-item span{color:var(--ink);font-weight:500;}
+
+/* MODE BADGE */
+.mode-badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;margin-left:10px;vertical-align:middle;}
+.mode-orig{color:var(--blue);border-color:var(--blue);}
+.mode-restr{color:var(--red);border-color:var(--red);}
+.mode-turn{color:var(--teal);border-color:var(--teal);}
+
+/* SCORECARD */
+.scorecard{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:20px;}
+.sc-cell{background:var(--paper2);padding:12px 14px;}
+.sc-lbl{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.sc-val{font-family:var(--serif);font-size:20px;}
+.sc-flag{font-family:var(--mono);font-size:10px;margin-top:2px;}
+.fg{color:var(--green)}.fa{color:var(--gold)}.fr{color:var(--red)}
+
+/* SECTION */
+.sec{margin-bottom:24px;}
+.sec-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+.sec-title::before{content:'';display:block;width:3px;height:11px;background:var(--gold);}
+.sec-body{font-size:13.5px;line-height:1.8;color:var(--ink2);white-space:pre-wrap;}
+
+/* Q LIST */
+.qlist{display:flex;flex-direction:column;gap:8px;}
+.qitem{border:1px solid var(--border);background:var(--paper2);padding:10px 14px;}
+.qi-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.qi-num{font-family:var(--mono);font-size:10px;color:var(--ink3);}
+.qi-sev{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border:1px solid currentColor;}
+.qi-sev.block{color:var(--red)}.qi-sev.adv{color:var(--gold)}
+.qi-q{font-size:13px;color:var(--ink);line-height:1.6;}
+.qi-why{font-size:12px;color:var(--ink3);margin-top:3px;}
+
+/* RISK TABLE */
+.rtable{width:100%;border-collapse:collapse;font-size:12.5px;}
+.rtable th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:7px 12px;text-align:left;font-weight:400;}
+.rtable td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+.rtable tr:nth-child(even) td{background:var(--paper2);}
+.rh{color:var(--red);font-weight:500;font-family:var(--mono);font-size:10px;}
+.rm{color:var(--gold);font-weight:500;font-family:var(--mono);font-size:10px;}
+.rl{color:var(--green);font-weight:500;font-family:var(--mono);font-size:10px;}
+
+/* OM FLAGS */
+.omlist{display:flex;flex-direction:column;gap:7px;}
+.omf{display:flex;align-items:flex-start;gap:9px;padding:9px 12px;border:1px solid var(--border);background:var(--paper2);}
+.omf-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.omf-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);}
+.omf-txt{font-size:12.5px;color:var(--ink2);margin-top:2px;line-height:1.6;}
+
+/* INDEPENDENT REVIEW */
+.ir-box{border:1px solid var(--teal);background:var(--teal2);padding:14px 18px;margin-bottom:12px;}
+.ir-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:4px;}
+.ir-body{font-size:13px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;}
+
+/* LEGAL */
+.legal-grid{display:flex;flex-direction:column;gap:8px;}
+.leg-item{border-left:3px solid var(--coral);background:var(--coral2);padding:10px 14px;}
+.leg-cat{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral);margin-bottom:3px;}
+.leg-body{font-size:13px;line-height:1.7;color:var(--ink2);}
+
+/* CLIENT FEEDBACK */
+.cf-findings{background:var(--purple2);border:1px solid var(--purple);padding:14px 18px;margin-bottom:16px;}
+.cf-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:4px;}
+.cf-body{font-size:13px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;}
+.cf-response-area{margin-top:16px;}
+.cf-r-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.cf-notes{width:100%;min-height:100px;background:var(--paper);border:1px solid var(--border);padding:10px;font-family:var(--sans);font-size:13px;color:var(--ink);outline:none;resize:vertical;transition:border-color .2s;}
+.cf-notes:focus{border-color:var(--gold);}
+.cf-upload-sm{border:1px dashed var(--border);background:var(--paper);padding:10px;text-align:center;cursor:pointer;position:relative;font-size:12px;color:var(--ink3);margin-top:6px;}
+.cf-upload-sm input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.materiality-box{margin-top:14px;padding:12px 16px;border:1px solid var(--border);}
+.mat-lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-bottom:4px;}
+.mat-verdict{font-family:var(--serif);font-size:18px;margin-bottom:4px;}
+.mat-body{font-size:13px;color:var(--ink2);line-height:1.7;white-space:pre-wrap;}
+.mat-loop{border-color:var(--gold);background:var(--gold3);}
+.mat-proceed{border-color:var(--green);background:var(--green2);}
+
+/* FINAL REC */
+.rec-box{border-left:4px solid var(--gold);background:var(--gold3);padding:14px 18px;margin-top:14px;}
+.rec-box.approve{border-color:var(--green);background:var(--green2);}
+.rec-box.decline{border-color:var(--red);background:var(--red2);}
+.rec-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;}
+.rec-verdict{font-family:var(--serif);font-size:22px;margin-bottom:6px;}
+.rec-body{font-size:13px;line-height:1.75;color:var(--ink2);white-space:pre-wrap;}
+
+/* CP TABLE */
+.cp-list{display:flex;flex-direction:column;gap:6px;}
+.cp-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--border);background:var(--paper2);}
+.cp-n{font-family:var(--mono);font-size:10px;color:var(--ink3);min-width:24px;margin-top:1px;}
+.cp-txt{font-size:13px;color:var(--ink2);line-height:1.6;}
+
+/* ACTIONS */
+.actions{display:flex;gap:8px;margin-top:28px;padding-top:16px;border-top:1px solid var(--border);}
+.btn-a{padding:9px 16px;border:1px solid var(--border);background:var(--paper2);color:var(--ink2);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.btn-a:hover{border-color:var(--gold);background:var(--gold3);color:var(--ink);}
+.btn-a.pri{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.btn-a.pri:hover{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-title">CreditDesk</div>
+    <div class="hdr-sub">Tier 1 CF Boutique · SA Corporate Finance</div>
+  </div>
+  <div class="hdr-r">
+    <select class="deal-mode-sel" id="dealMode" onchange="updateDealMode()">
+      <option value="orig">New origination</option>
+      <option value="restr">Debt restructure</option>
+      <option value="turn">Turnaround viability</option>
+    </select>
+    <div class="hdr-badge">7-STAGE WORKFLOW</div>
+  </div>
+</div>
+
+<!-- STAGE NAV -->
+<div class="stage-nav" id="stageNav">
+  <div class="stage-tab active" data-stage="1" onclick="goStage(1)"><div class="st-num">1</div><div class="st-label">Intake</div></div>
+  <div class="stage-tab" data-stage="2" onclick="goStage(2)"><div class="st-num">2</div><div class="st-label">Credit analysis</div></div>
+  <div class="stage-tab" data-stage="3" onclick="goStage(3)"><div class="st-num">3</div><div class="st-label">Clarifications</div></div>
+  <div class="stage-tab" data-stage="4" onclick="goStage(4)"><div class="st-num">4</div><div class="st-label">Indep. review</div></div>
+  <div class="stage-tab" data-stage="5" onclick="goStage(5)"><div class="st-num">5</div><div class="st-label">Legal DD</div></div>
+  <div class="stage-tab" data-stage="6" onclick="goStage(6)"><div class="st-num">6</div><div class="st-label">Client feedback</div></div>
+  <div class="stage-tab" data-stage="7" onclick="goStage(7)"><div class="st-num">7</div><div class="st-label">Final rec.</div></div>
+</div>
+
+<!-- DEAL CONTEXT STRIP -->
+<div class="deal-strip" id="dealStrip" style="display:none;">
+  <div class="ds-item">Entity <span id="ds-name">—</span></div>
+  <div class="ds-item">Sector <span id="ds-sector">—</span></div>
+  <div class="ds-item">Facility <span id="ds-ftype">—</span></div>
+  <div class="ds-item">Amount <span id="ds-amt">—</span></div>
+  <div class="ds-item">Mode <span id="ds-mode">—</span></div>
+  <div class="ds-item">Jurisdiction <span id="ds-jur">—</span></div>
+</div>
+
+<div class="body">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <!-- content injected per stage -->
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="loading" id="loading">
+    <div class="lbar-w"><div class="lbar"></div></div>
+    <div class="llabel" id="llabel">Processing...</div>
+    <div class="lsteps" id="lsteps"></div>
+  </div>
+  <div class="out" id="out"></div>
+  <div class="empty" id="empty">
+    <div class="empty-g">⚖</div>
+    <div class="empty-t">Stage 1 — Deal intake</div>
+    <div class="empty-d">Set the deal context on the left. Select the deal mode above. All subsequent stages inherit this context.</div>
+  </div>
+</div>
+
+</div><!-- /body -->
+
+<script>
+// ── GLOBAL STATE ────────────────────────────────────────────────
+const S = {
+  stage: 1,
+  mode: 'orig',
+  deal: { name:'', sector:'', ftype:'', amount:'', jurisdiction:'SA', context:'' },
+  files: {},       // keyed by stage number
+  cfNotes: '',
+  cfFiles: [],
+  outputs: {},     // cached AI outputs per stage
+  stagesDone: new Set(),
+};
+
+const MODE_LABELS = { orig:'New origination', restr:'Debt restructure', turn:'Turnaround viability' };
+
+// ── NAVIGATION ───────────────────────────────────────────────────
+function goStage(n) {
+  S.stage = n;
+  document.querySelectorAll('.stage-tab').forEach(t => {
+    const tn = +t.dataset.stage;
+    t.classList.toggle('active', tn === n);
+    t.classList.toggle('done', S.stagesDone.has(tn) && tn !== n);
+  });
+  renderSidebar();
+  renderMain();
+}
+
+function updateDealMode() {
+  S.mode = document.getElementById('dealMode').value;
+  document.getElementById('ds-mode').textContent = MODE_LABELS[S.mode];
+}
+
+// ── SIDEBAR RENDERER ─────────────────────────────────────────────
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  const fns = [null, sb1, sb2, sb3, sb4, sb5, sb6, sb7];
+  sb.innerHTML = '';
+  fns[S.stage](sb);
+}
+
+function fileBlock(stageKey, label='Supporting documents') {
+  const files = S.files[stageKey] || [];
+  return `
+    <div>
+      <div class="s-label">${label}</div>
+      <div class="upzone" id="uz-${stageKey}">
+        <input type="file" multiple onchange="handleFiles('${stageKey}',this.files)">
+        <div class="upzone-txt">Drop files or click to upload</div>
+        <div class="upzone-txt" style="font-size:11px;opacity:.6">PDF · XLSX · CSV · DOCX</div>
+      </div>
+      <div class="flist" id="fl-${stageKey}">
+        ${files.map((f,i)=>`<div class="fitem"><span>${f.name}</span><span class="frm" onclick="removeFile('${stageKey}',${i})">×</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function sb1(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink);margin-bottom:0">Deal intake</div>
+    <div class="s-group"><div class="s-label">Entity name</div><input class="s-input" id="s-name" placeholder="e.g. Acme Holdings (Pty) Ltd" value="${S.deal.name}"></div>
+    <div class="s-group"><div class="s-label">Sector</div>
+      <select class="s-select" id="s-sector">
+        ${['','Construction & Infrastructure','Mining & Resources','Agriculture & Agri-processing','Retail & Wholesale','Manufacturing','Property & Real Estate','Financial Services','Healthcare & Pharma','Logistics & Transport','Technology & ICT','Food & Beverage','Energy & Utilities','Other'].map(o=>`<option ${S.deal.sector===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+    <div class="s-group"><div class="s-label">Facility type</div>
+      <select class="s-select" id="s-ftype">
+        ${['','Term Loan','Revolving Credit Facility','Acquisition Finance','Project Finance','Working Capital Finance','Trade Finance','Mezzanine / Subordinated Debt','Refinance','Debt Rescheduling','Turnaround Facility'].map(o=>`<option ${S.deal.ftype===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+    <div class="s-group"><div class="s-label">Facility amount (ZAR)</div><input class="s-input" id="s-amt" placeholder="e.g. R 45,000,000" value="${S.deal.amount}"></div>
+    <div class="s-group"><div class="s-label">Jurisdiction</div>
+      <select class="s-select" id="s-jur">
+        ${['South Africa','South Africa + Namibia','South Africa + Mozambique','South Africa + Zambia','South Africa + Zimbabwe','South Africa + Botswana','Pan-African','Cross-border (specify below)'].map(o=>`<option ${S.deal.jurisdiction===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+    </div>
+    <div class="s-group"><div class="s-label">Key context / concerns</div><textarea class="s-textarea" id="s-ctx" placeholder="Owner draws, related-party loans, load-shedding exposure, BEE structure, existing debt...">${S.deal.context}</textarea></div>
+    <button class="btn-run" onclick="saveDeal()">Confirm deal context →</button>`;
+}
+
+function sb2(sb) {
+  const scope = ['Credit metrics','Liquidity analysis','Owner-managed flags','Debt serviceability','Normalised EBITDA','Related-party review'];
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Credit analysis</div>
+    ${fileBlock(2,'Financial statements')}
+    <div>
+      <div class="s-label">Additional web source</div>
+      <div style="display:flex;gap:6px;">
+        <input class="s-input" id="fetch-url" placeholder="Company website, news URL..." style="flex:1">
+        <button class="btn-run" style="width:auto;padding:7px 12px;font-size:12px;" onclick="doFetch()">Fetch</button>
+      </div>
+      <div id="fetch-done" style="margin-top:6px;font-family:var(--mono);font-size:10px;color:var(--green);"></div>
+    </div>
+    <div>
+      <div class="s-label">Analysis scope</div>
+      <div class="scope-grid">${scope.map(s=>`<label class="sc-item"><input type="checkbox" checked> ${s}</label>`).join('')}</div>
+    </div>
+    <button class="btn-run" onclick="runStage(2)">Generate credit memo →</button>`;
+}
+
+function sb3(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Clarifications</div>
+    <p style="font-size:12px;color:var(--ink3);line-height:1.6;">The AI audits the submission and generates a prioritised list of information gaps and clarification questions for the client.</p>
+    <div class="s-group"><div class="s-label">Additional notes</div><textarea class="s-textarea" id="s3-notes" placeholder="Any specific areas you want probed..."></textarea></div>
+    <button class="btn-run" onclick="runStage(3)">Generate Q&amp;A list →</button>`;
+}
+
+function sb4(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Independent review</div>
+    <p style="font-size:12px;color:var(--ink3);line-height:1.6;">A separate AI pass acts as challenger analyst — it reads the credit memo without seeing the original recommendation, then forms its own view.</p>
+    <div class="s-group"><div class="s-label">Reviewer focus areas</div>
+      <div class="scope-grid">
+        ${['Assumption stress','Downside scenarios','Owner-managed blind spots','Structural weaknesses','Covenant adequacy','Comparable deals'].map(s=>`<label class="sc-item"><input type="checkbox" checked> ${s}</label>`).join('')}
+      </div>
+    </div>
+    <button class="btn-run" onclick="runStage(4)">Run independent review →</button>`;
+}
+
+function sb5(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Legal DD</div>
+    ${fileBlock(5,'Legal documents')}
+    <div>
+      <div class="s-label">Legal review scope</div>
+      <div class="scope-grid">
+        ${['Entity & ownership chain','Security package','Covenant enforceability','FICA / FAIS compliance','Material contracts','Litigation exposure','Inter-creditor issues','Change-of-control'].map(s=>`<label class="sc-item"><input type="checkbox" checked> ${s}</label>`).join('')}
+      </div>
+    </div>
+    <button class="btn-run" onclick="runStage(5)">Generate legal risk summary →</button>`;
+}
+
+function sb6(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Client feedback</div>
+    <p style="font-size:12px;color:var(--ink3);line-height:1.6;">The AI drafts preliminary findings talking points for your verbal engagement. After the meeting, capture the client's response below.</p>
+    <button class="btn-run" onclick="runStage(6,'findings')" style="margin-bottom:10px;">Draft preliminary findings →</button>
+    <div id="cf-response-panel" style="display:none;">
+      <div class="s-label">Meeting notes — client response</div>
+      <textarea class="s-textarea" id="cf-notes" style="min-height:100px;" placeholder="Key points raised, concessions offered, new information provided...">${S.cfNotes}</textarea>
+      ${fileBlock('cf','Documents provided by client')}
+      <button class="btn-run" style="margin-top:10px;" onclick="runStage(6,'materiality')">Assess materiality →</button>
+    </div>`;
+}
+
+function sb7(sb) {
+  sb.innerHTML = `
+    <div class="s-label" style="font-family:var(--serif);font-size:16px;color:var(--ink)">Final recommendation</div>
+    <p style="font-size:12px;color:var(--ink3);line-height:1.6;">Synthesises all prior stages into a credit committee pack with full rationale, conditions precedent, recommended covenants, and a formal verdict.</p>
+    <div class="s-group"><div class="s-label">Sign-off authority</div><input class="s-input" id="s7-auth" placeholder="e.g. Credit Committee · MD · Senior Partner"></div>
+    <div class="s-group"><div class="s-label">Additional instruction</div><textarea class="s-textarea" id="s7-notes" placeholder="Any final instruction for the recommendation..."></textarea></div>
+    <button class="btn-run" onclick="runStage(7)">Generate final recommendation →</button>`;
+}
+
+// ── MAIN RENDERER ────────────────────────────────────────────────
+function renderMain() {
+  const empty = document.getElementById('empty');
+  const out = document.getElementById('out');
+  empty.style.display = 'none';
+  out.className = 'out';
+  if (S.outputs[S.stage]) {
+    out.className = 'out on';
+    out.innerHTML = S.outputs[S.stage];
+  } else {
+    empty.style.display = 'flex';
+    const titles = ['','Deal intake','Credit analysis','Clarifications & Q&A','Independent review','Legal DD','Client feedback','Final recommendation'];
+    const descs = ['','Set deal context on the left — all stages inherit this.','Upload financials and run the credit memo.','Review gaps and clarification questions for the client.','A challenger AI reviews the credit memo independently.','Upload legal documents for a full legal risk summary.','Generate preliminary findings then capture the client response.','Synthesise all stages into the final credit committee pack.'];
+    empty.querySelector('.empty-t').textContent = `Stage ${S.stage} — ${titles[S.stage]}`;
+    empty.querySelector('.empty-d').textContent = descs[S.stage];
+  }
+}
+
+// ── DEAL SAVE ────────────────────────────────────────────────────
+function saveDeal() {
+  S.deal.name = document.getElementById('s-name').value.trim() || 'Unnamed Entity';
+  S.deal.sector = document.getElementById('s-sector').value;
+  S.deal.ftype = document.getElementById('s-ftype').value;
+  S.deal.amount = document.getElementById('s-amt').value.trim();
+  S.deal.jurisdiction = document.getElementById('s-jur').value;
+  S.deal.context = document.getElementById('s-ctx').value.trim();
+  updateStrip();
+  S.stagesDone.add(1);
+  S.outputs[1] = buildStage1Output();
+  goStage(2);
+}
+
+function updateStrip() {
+  document.getElementById('deal-strip') && (document.getElementById('dealStrip').style.display='flex');
+  document.getElementById('ds-name').textContent = S.deal.name || '—';
+  document.getElementById('ds-sector').textContent = S.deal.sector || '—';
+  document.getElementById('ds-ftype').textContent = S.deal.ftype || '—';
+  document.getElementById('ds-amt').textContent = S.deal.amount || '—';
+  document.getElementById('ds-mode').textContent = MODE_LABELS[S.mode];
+  document.getElementById('ds-jur').textContent = S.deal.jurisdiction || '—';
+  document.getElementById('dealStrip').style.display = 'flex';
+}
+
+function buildStage1Output() {
+  const modeClass = {orig:'mode-orig',restr:'mode-restr',turn:'mode-turn'}[S.mode];
+  return `<div class="memo-hdr">
+    <div class="memo-kicker">Deal intake — confirmed</div>
+    <div class="memo-title">${S.deal.name} <span class="mode-badge ${modeClass}">${MODE_LABELS[S.mode]}</span></div>
+    <div class="memo-meta">
+      <div class="mm-item">Sector <span>${S.deal.sector||'—'}</span></div>
+      <div class="mm-item">Facility <span>${S.deal.ftype||'—'}</span></div>
+      <div class="mm-item">Amount <span>${S.deal.amount||'—'}</span></div>
+      <div class="mm-item">Jurisdiction <span>${S.deal.jurisdiction||'—'}</span></div>
+    </div>
+  </div>
+  <div class="sec"><div class="sec-title">Analyst notes</div>
+    <div class="sec-body">${S.deal.context||'No additional context provided.'}</div>
+  </div>
+  <div class="actions"><button class="btn-a pri" onclick="goStage(2)">Proceed to credit analysis →</button></div>`;
+}
+
+// ── FILE HANDLING ────────────────────────────────────────────────
+function handleFiles(key, files) {
+  if (!S.files[key]) S.files[key] = [];
+  Array.from(files).forEach(f => {
+    const isText = f.type.includes('text') || f.name.endsWith('.csv');
+    const reader = new FileReader();
+    reader.onload = e => {
+      S.files[key].push({ name:f.name, content: isText ? e.target.result : e.target.result.split(',')[1], isPdf:f.name.endsWith('.pdf'), isText });
+      const fl = document.getElementById('fl-'+key);
+      if (fl) fl.innerHTML = S.files[key].map((ff,i)=>`<div class="fitem"><span>${ff.name}</span><span class="frm" onclick="removeFile('${key}',${i})">×</span></div>`).join('');
+    };
+    isText ? reader.readAsText(f) : reader.readAsDataURL(f);
+  });
+}
+function removeFile(key, idx) {
+  S.files[key].splice(idx,1);
+  const fl = document.getElementById('fl-'+key);
+  if (fl) fl.innerHTML = S.files[key].map((ff,i)=>`<div class="fitem"><span>${ff.name}</span><span class="frm" onclick="removeFile('${key}',${i})">×</span></div>`).join('');
+}
+
+// ── WEB FETCH ────────────────────────────────────────────────────
+let fetchedData = [];
+async function doFetch() {
+  const url = document.getElementById('fetch-url')?.value.trim(); if (!url) return;
+  const btn = document.querySelector('#sidebar .btn-run[onclick="doFetch()"]');
+  if (btn) { btn.disabled=true; btn.textContent='Fetching...'; }
+  try {
+    const r = await callClaude(`Fetch and summarise key financial/corporate information from this URL for SA credit analysis: ${url}. Return 3-4 paragraphs of relevant data. If unavailable return "UNAVAILABLE".`, []);
+    if (!r.includes('UNAVAILABLE')) {
+      fetchedData.push({ url, content: r });
+      const el = document.getElementById('fetch-done');
+      if (el) el.innerHTML += `<div>✓ ${url}</div>`;
+    }
+  } catch(e) {}
+  if (btn) { btn.disabled=false; btn.textContent='Fetch'; }
+}
+
+// ── STAGE RUNNER ─────────────────────────────────────────────────
+async function runStage(n, sub) {
+  showLoading(true);
+  const steps = getSteps(n, sub);
+  animateSteps(steps);
+  try {
+    let html = '';
+    if (n===2) html = await stage2();
+    else if (n===3) html = await stage3();
+    else if (n===4) html = await stage4();
+    else if (n===5) html = await stage5();
+    else if (n===6 && sub==='findings') html = await stage6findings();
+    else if (n===6 && sub==='materiality') html = await stage6materiality();
+    else if (n===7) html = await stage7();
+    S.outputs[n] = (S.outputs[n]||'') + html;
+    S.stagesDone.add(n);
+    showLoading(false);
+    const out = document.getElementById('out');
+    out.innerHTML = S.outputs[n];
+    out.className = 'out on';
+    document.getElementById('empty').style.display = 'none';
+    if (n===6 && sub==='findings') {
+      const panel = document.getElementById('cf-response-panel');
+      if (panel) panel.style.display = 'block';
+    }
+  } catch(e) {
+    showLoading(false);
+    document.getElementById('out').innerHTML = `<div style="color:var(--red);padding:20px;">Analysis failed. Please check connection and retry.<br><small>${e.message}</small></div>`;
+    document.getElementById('out').className = 'out on';
+  }
+}
+
+function getSteps(n, sub) {
+  const map = {
+    2:['Reading financial documents','Extracting key metrics','Normalising for owner remuneration','Computing credit ratios','Identifying risk factors','Drafting credit memo'],
+    3:['Auditing submission completeness','Identifying blocking gaps','Generating clarification questions','Prioritising by urgency'],
+    4:['Loading credit memo as challenger','Stress-testing assumptions','Identifying analytical gaps','Forming independent view','Drafting reviewer findings'],
+    5:['Reviewing entity structure','Analysing security package','Checking covenant enforceability','FICA/FAIS compliance review','Drafting legal risk summary'],
+    6:sub==='findings'?['Synthesising credit concerns','Drafting preliminary findings','Preparing talking points']:['Reading client response','Assessing materiality','Determining loop or proceed'],
+    7:['Synthesising all stages','Drafting conditions precedent','Formulating covenant pack','Writing final recommendation','Compiling CC pack'],
+  };
+  return map[n]||['Processing...'];
+}
+
+// ── AI CALLS ─────────────────────────────────────────────────────
+async function callClaude(prompt, files, system) {
+  const content = [];
+  (files||[]).forEach(f => {
+    if (f.isPdf) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:f.content }});
+    else if (f.isText) content.push({ type:'text', text:`--- FILE: ${f.name} ---\n${f.content}` });
+  });
+  content.push({ type:'text', text: prompt });
+  const body = { model:'claude-sonnet-4-20250514', max_tokens:4000, messages:[{ role:'user', content }] };
+  if (system) body.system = system;
+  const r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const d = await r.json();
+  return d.content?.find(b=>b.type==='text')?.text || '';
+}
+
+function dealCtx() {
+  return `ENTITY: ${S.deal.name} | SECTOR: ${S.deal.sector} | FACILITY: ${S.deal.ftype} | AMOUNT: ${S.deal.amount} | JURISDICTION: ${S.deal.jurisdiction} | DEAL MODE: ${MODE_LABELS[S.mode]} | CONTEXT: ${S.deal.context||'None'}`;
+}
+
+function fetchCtx() {
+  return fetchedData.length ? '\n\nWEB INTELLIGENCE:\n'+fetchedData.map(d=>`Source: ${d.url}\n${d.content}`).join('\n\n') : '';
+}
+
+function modeCalibration() {
+  if (S.mode==='restr') return `\n\nRESTRUCTURING CALIBRATION: Apply distressed credit thresholds. Focus on: liquidity runway (months), debt overhang, inter-creditor priority, restructuring feasibility, haircut analysis, management track record in distress, asset coverage ratio, break-even analysis.`;
+  if (S.mode==='turn') return `\n\nTURNAROUND CALIBRATION: Apply turnaround viability framework. Focus on: root cause of distress, management quality and commitment, operational restructuring plan credibility, cash burn rate, working capital cycle, turnaround milestones, sector recovery prospects.`;
+  return '\n\nORIGINATION CALIBRATION: Apply standard SA investment-grade credit norms. SARB prudential benchmarks. Owner-managed adjustments for remuneration, related-party exposures, BEE structure.';
+}
+
+// ── STAGE FUNCTIONS ───────────────────────────────────────────────
+async function stage2() {
+  const sys = `You are a senior credit analyst at a Tier 1 South African corporate finance boutique. Write precise, investment-grade credit memoranda. Respond ONLY in valid JSON, no markdown, no preamble.`;
+  const files = S.files[2]||[];
+  const prompt = `${dealCtx()}${fetchCtx()}${modeCalibration()}
+
+Produce a full credit memorandum. Return ONLY this JSON structure:
+{
+  "creditMetrics":{"netLeverage":"x.xx×","ebitdaCoverage":"x.xx×","dscr":"x.xx×","currentRatio":"x.xx×","leverageFlag":"green|amber|red","coverageFlag":"green|amber|red","dscFlag":"green|amber|red","liquidityFlag":"green|amber|red"},
+  "executiveSummary":"...",
+  "businessOverview":"...",
+  "financialAnalysis":"...",
+  "debtServiceability":"...",
+  "ownerManagedFlags":[{"icon":"⚠","label":"...","text":"..."}],
+  "riskFactors":[{"factor":"...","severity":"High|Medium|Low","mitigation":"..."}]
+}`;
+  const raw = await callClaude(prompt, files, sys);
+  let m;
+  try { m = JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e) { m = { executiveSummary: raw }; }
+  const cm = m.creditMetrics||{};
+  const fc = f => f==='green'?'fg':f==='red'?'fr':'fa';
+  const ft = f => f==='green'?'▲ Within norms':f==='red'?'▼ Breach risk':'— Monitor';
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Credit memorandum · Stage 2 of 7</div>
+      <div class="memo-title">${S.deal.name}</div>
+      <div class="memo-meta">
+        <div class="mm-item">Sector <span>${S.deal.sector}</span></div>
+        <div class="mm-item">Facility <span>${S.deal.ftype}</span></div>
+        <div class="mm-item">Amount <span>${S.deal.amount}</span></div>
+        <div class="mm-item">Mode <span>${MODE_LABELS[S.mode]}</span></div>
+      </div>
+    </div>
+    <div class="scorecard">
+      <div class="sc-cell"><div class="sc-lbl">Net leverage</div><div class="sc-val">${cm.netLeverage||'N/A'}</div><div class="sc-flag ${fc(cm.leverageFlag)}">${ft(cm.leverageFlag)}</div></div>
+      <div class="sc-cell"><div class="sc-lbl">EBITDA coverage</div><div class="sc-val">${cm.ebitdaCoverage||'N/A'}</div><div class="sc-flag ${fc(cm.coverageFlag)}">${ft(cm.coverageFlag)}</div></div>
+      <div class="sc-cell"><div class="sc-lbl">DSCR</div><div class="sc-val">${cm.dscr||'N/A'}</div><div class="sc-flag ${fc(cm.dscFlag)}">${ft(cm.dscFlag)}</div></div>
+      <div class="sc-cell"><div class="sc-lbl">Current ratio</div><div class="sc-val">${cm.currentRatio||'N/A'}</div><div class="sc-flag ${fc(cm.liquidityFlag)}">${ft(cm.liquidityFlag)}</div></div>
+    </div>
+    ${['executiveSummary','businessOverview','financialAnalysis','debtServiceability'].filter(k=>m[k]).map(k=>`
+      <div class="sec"><div class="sec-title">${k.replace(/([A-Z])/g,' $1').toLowerCase()}</div><div class="sec-body">${m[k]}</div></div>`).join('')}
+    ${m.ownerManagedFlags?.length?`<div class="sec"><div class="sec-title">Owner-managed risk flags</div><div class="omlist">${m.ownerManagedFlags.map(f=>`<div class="omf"><div class="omf-icon">${f.icon||'⚠'}</div><div><div class="omf-lbl">${f.label}</div><div class="omf-txt">${f.text}</div></div></div>`).join('')}</div></div>`:''}
+    ${m.riskFactors?.length?`<div class="sec"><div class="sec-title">Risk register</div><table class="rtable"><thead><tr><th>Risk factor</th><th>Severity</th><th>Mitigation</th></tr></thead><tbody>${m.riskFactors.map(r=>`<tr><td>${r.factor}</td><td><span class="${r.severity==='High'?'rh':r.severity==='Low'?'rl':'rm'}">${r.severity}</span></td><td>${r.mitigation}</td></tr>`).join('')}</tbody></table></div>`:''}
+    <div class="actions"><button class="btn-a pri" onclick="goStage(3)">Proceed to clarifications →</button><button class="btn-a" onclick="copyOut()">Copy memo</button></div>`;
+}
+
+async function stage3() {
+  const notes = document.getElementById('s3-notes')?.value||'';
+  const priorMemo = S.outputs[2]?.replace(/<[^>]+>/g,' ')||'';
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+PRIOR CREDIT MEMO SUMMARY:
+${priorMemo.substring(0,3000)}
+
+ANALYST NOTES: ${notes}
+
+You are auditing this credit submission. Generate a numbered list of clarification questions and information gaps. Return ONLY this JSON:
+{
+  "intro":"...",
+  "questions":[{"num":1,"severity":"Blocking|Advisory","question":"...","why":"..."}]
+}
+Blocking = must be resolved before credit decision. Advisory = important but not blocking. Generate 8-15 questions appropriate to the deal mode: ${MODE_LABELS[S.mode]}.`;
+  const raw = await callClaude(prompt, [], `You are a senior SA credit analyst generating a formal information request list. JSON only, no markdown.`);
+  let d; try { d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={intro:raw,questions:[]}; }
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Clarifications & information gaps · Stage 3 of 7</div>
+      <div class="memo-title">${S.deal.name}</div>
+    </div>
+    <div class="sec"><div class="sec-title">Audit summary</div><div class="sec-body">${d.intro||''}</div></div>
+    <div class="sec"><div class="sec-title">Clarification questions</div>
+      <div class="qlist">${(d.questions||[]).map(q=>`
+        <div class="qitem">
+          <div class="qi-top"><span class="qi-num">Q${q.num}</span><span class="qi-sev ${q.severity==='Blocking'?'block':'adv'}">${q.severity}</span></div>
+          <div class="qi-q">${q.question}</div>
+          <div class="qi-why">${q.why||''}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="actions"><button class="btn-a pri" onclick="goStage(4)">Proceed to independent review →</button><button class="btn-a" onclick="copyOut()">Copy Q&A list</button></div>`;
+}
+
+async function stage4() {
+  const priorMemo = S.outputs[2]?.replace(/<[^>]+>/g,' ')||'';
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+You are an INDEPENDENT challenger analyst. You have NOT seen the original analyst's recommendation. Read this credit memo and form your own view:
+
+${priorMemo.substring(0,3000)}
+
+Critically assess: optimistic assumptions, missing downside scenarios, owner-managed blind spots, structural weaknesses, and whether the credit is adequately understood. Then state your independent verdict.
+
+Return ONLY this JSON:
+{
+  "challengerSummary":"...",
+  "agreements":[{"point":"...","comment":"..."}],
+  "challenges":[{"point":"...","severity":"High|Medium|Low","detail":"..."}],
+  "gaps":["..."],
+  "independentVerdict":"Supports approval|Supports approval with stronger conditions|Recommends decline|Requires further information",
+  "verdictRationale":"..."
+}`;
+  const raw = await callClaude(prompt,[],`You are an independent credit reviewer at a Tier 1 SA CF boutique. You challenge the primary analyst's work. JSON only.`);
+  let d; try { d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={challengerSummary:raw,challenges:[],agreements:[],gaps:[],independentVerdict:'',verdictRationale:''}; }
+  const vc = d.independentVerdict?.toLowerCase().includes('decline')?'decline':d.independentVerdict?.toLowerCase().includes('supports approval')?'approve':'';
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Independent review · Stage 4 of 7 · Challenger analysis</div>
+      <div class="memo-title">${S.deal.name}</div>
+    </div>
+    <div class="sec"><div class="sec-title">Reviewer summary</div>
+      <div class="ir-box"><div class="ir-lbl">Independent reviewer — SA CF boutique</div><div class="ir-body">${d.challengerSummary||''}</div></div>
+    </div>
+    ${d.challenges?.length?`<div class="sec"><div class="sec-title">Challenges raised</div><table class="rtable"><thead><tr><th>Challenge</th><th>Severity</th><th>Detail</th></tr></thead><tbody>${d.challenges.map(c=>`<tr><td>${c.point}</td><td><span class="${c.severity==='High'?'rh':c.severity==='Low'?'rl':'rm'}">${c.severity}</span></td><td>${c.detail}</td></tr>`).join('')}</tbody></table></div>`:''}
+    ${d.agreements?.length?`<div class="sec"><div class="sec-title">Areas of agreement</div><div class="sec-body">${d.agreements.map(a=>`<strong>${a.point}:</strong> ${a.comment}`).join('\n\n')}</div></div>`:''}
+    ${d.gaps?.length?`<div class="sec"><div class="sec-title">Identified gaps</div><div class="sec-body">${d.gaps.join('\n')}</div></div>`:''}
+    <div class="sec"><div class="sec-title">Independent verdict</div>
+      <div class="rec-box ${vc}"><div class="rec-lbl">Challenger verdict</div><div class="rec-verdict">${d.independentVerdict||''}</div><div class="rec-body">${d.verdictRationale||''}</div></div>
+    </div>
+    <div class="actions"><button class="btn-a pri" onclick="goStage(5)">Proceed to legal DD →</button><button class="btn-a" onclick="copyOut()">Copy review</button></div>`;
+}
+
+async function stage5() {
+  const files = S.files[5]||[];
+  const priorCtx = (S.outputs[2]||'').replace(/<[^>]+>/g,' ').substring(0,1500);
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+CREDIT CONTEXT: ${priorCtx}
+
+You are a senior legal adviser in South Africa specialising in corporate finance, lending, and security law. Produce a full legal due diligence risk summary. Consider: Companies Act 71 of 2008, National Credit Act, FICA Act, FAIS Act, Insolvency Act, SA security law (cession, mortgage bond, notarial bond, suretyship), and relevant case law.
+
+Return ONLY this JSON:
+{
+  "legalOverview":"...",
+  "categories":[
+    {"category":"Entity structure & ownership","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Security package","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Covenant enforceability","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"FICA / FAIS compliance","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Material contracts","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Litigation & contingent liability","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Inter-creditor & ranking","findings":"...","riskLevel":"High|Medium|Low"},
+    {"category":"Change-of-control provisions","findings":"...","riskLevel":"High|Medium|Low"}
+  ],
+  "legalRecommendations":["..."],
+  "legalVerdict":"Cleared for credit decision|Cleared with conditions|Material legal risks — do not proceed"
+}`;
+  const raw = await callClaude(prompt, files, `You are a senior SA corporate finance legal adviser. JSON only.`);
+  let d; try { d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={legalOverview:raw,categories:[],legalRecommendations:[],legalVerdict:''}; }
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Legal due diligence · Stage 5 of 7</div>
+      <div class="memo-title">${S.deal.name}</div>
+    </div>
+    <div class="sec"><div class="sec-title">Legal overview</div><div class="sec-body">${d.legalOverview||''}</div></div>
+    ${d.categories?.length?`<div class="sec"><div class="sec-title">Legal risk by category</div><div class="legal-grid">${d.categories.map(c=>`
+      <div class="leg-item">
+        <div class="leg-cat">${c.category} <span class="${c.riskLevel==='High'?'rh':c.riskLevel==='Low'?'rl':'rm'}" style="float:right">${c.riskLevel}</span></div>
+        <div class="leg-body">${c.findings}</div>
+      </div>`).join('')}</div></div>`:''}
+    ${d.legalRecommendations?.length?`<div class="sec"><div class="sec-title">Legal recommendations</div><div class="cp-list">${d.legalRecommendations.map((r,i)=>`<div class="cp-item"><div class="cp-n">${i+1}</div><div class="cp-txt">${r}</div></div>`).join('')}</div></div>`:''}
+    <div class="sec"><div class="sec-title">Legal verdict</div>
+      <div class="rec-box ${d.legalVerdict?.includes('Material')?'decline':d.legalVerdict?.includes('conditions')?'':'approve'}">
+        <div class="rec-lbl">Legal DD verdict</div><div class="rec-verdict">${d.legalVerdict||''}</div>
+      </div>
+    </div>
+    <div class="actions"><button class="btn-a pri" onclick="goStage(6)">Proceed to client feedback →</button><button class="btn-a" onclick="copyOut()">Copy legal summary</button></div>`;
+}
+
+async function stage6findings() {
+  const creditCtx = (S.outputs[2]||'').replace(/<[^>]+>/g,' ').substring(0,1200);
+  const reviewCtx = (S.outputs[4]||'').replace(/<[^>]+>/g,' ').substring(0,800);
+  const legalCtx = (S.outputs[5]||'').replace(/<[^>]+>/g,' ').substring(0,800);
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+CREDIT MEMO SUMMARY: ${creditCtx}
+INDEPENDENT REVIEW SUMMARY: ${reviewCtx}
+LEGAL DD SUMMARY: ${legalCtx}
+
+Prepare an INTERNAL preliminary findings memo — structured talking points for the deal team's verbal engagement with the client/borrower. This is NOT sent to the client; it guides the conversation.
+
+Return ONLY this JSON:
+{
+  "engagementObjective":"...",
+  "keyFindings":["..."],
+  "draftConditions":["..."],
+  "questionsForClient":["..."],
+  "negotiationGuidance":"...",
+  "redLines":["..."]
+}`;
+  const raw = await callClaude(prompt,[],`You are a senior SA CF boutique deal team member preparing internal talking points. JSON only.`);
+  let d; try{ d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={engagementObjective:raw}; }
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Preliminary findings — internal memo · Stage 6 of 7</div>
+      <div class="memo-title">${S.deal.name}</div>
+    </div>
+    <div class="sec"><div class="sec-title">Engagement objective</div>
+      <div class="cf-findings"><div class="cf-lbl">Deal team — verbal engagement guidance</div><div class="cf-body">${d.engagementObjective||''}</div></div>
+    </div>
+    ${d.keyFindings?.length?`<div class="sec"><div class="sec-title">Key findings to communicate</div><div class="cp-list">${d.keyFindings.map((f,i)=>`<div class="cp-item"><div class="cp-n">${i+1}</div><div class="cp-txt">${f}</div></div>`).join('')}</div></div>`:''}
+    ${d.draftConditions?.length?`<div class="sec"><div class="sec-title">Draft conditions to table</div><div class="cp-list">${d.draftConditions.map((c,i)=>`<div class="cp-item"><div class="cp-n">CP${i+1}</div><div class="cp-txt">${c}</div></div>`).join('')}</div></div>`:''}
+    ${d.questionsForClient?.length?`<div class="sec"><div class="sec-title">Questions for client</div><div class="qlist">${d.questionsForClient.map((q,i)=>`<div class="qitem"><div class="qi-top"><span class="qi-num">Q${i+1}</span></div><div class="qi-q">${q}</div></div>`).join('')}</div></div>`:''}
+    ${d.negotiationGuidance?`<div class="sec"><div class="sec-title">Negotiation guidance</div><div class="sec-body">${d.negotiationGuidance}</div></div>`:''}
+    ${d.redLines?.length?`<div class="sec"><div class="sec-title">Red lines — non-negotiable</div><div class="legal-grid">${d.redLines.map(r=>`<div class="leg-item" style="border-left-color:var(--red)"><div class="leg-cat" style="color:var(--red)">Red line</div><div class="leg-body">${r}</div></div>`).join('')}</div></div>`:''}
+    <div style="background:var(--paper3);border:1px solid var(--border);padding:14px 18px;margin-top:16px;">
+      <div class="s-label">After the client meeting — capture response below in the sidebar</div>
+    </div>`;
+}
+
+async function stage6materiality() {
+  S.cfNotes = document.getElementById('cf-notes')?.value||'';
+  const cfFiles = S.files['cf']||[];
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+ANALYST MEETING NOTES (client response):
+${S.cfNotes}
+
+Prior credit concerns: ${(S.outputs[2]||'').replace(/<[^>]+>/g,' ').substring(0,800)}
+
+Assess whether the client's response introduces MATERIAL new information that changes the credit picture and requires re-analysis, or whether it is non-material and the deal can proceed to final recommendation.
+
+Return ONLY this JSON:
+{
+  "materialityVerdict":"Material — re-analysis required|Non-material — proceed to final recommendation",
+  "rationale":"...",
+  "newInformationSummary":"...",
+  "resolvedConcerns":["..."],
+  "outstandingConcerns":["..."],
+  "recommendation":"Loop back to Stage 2 with updated documents|Proceed to Stage 7"
+}`;
+  const raw = await callClaude(prompt, cfFiles, `You are assessing materiality of client feedback in an SA CF credit process. JSON only.`);
+  let d; try{ d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={materialityVerdict:'Assessment failed',rationale:raw}; }
+  const isLoop = d.recommendation?.includes('Loop');
+  const matHtml = `
+    <div class="sec" style="margin-top:20px;"><div class="sec-title">Materiality assessment</div>
+      <div class="materiality-box ${isLoop?'mat-loop':'mat-proceed'}">
+        <div class="mat-lbl">Materiality verdict</div>
+        <div class="mat-verdict">${d.materialityVerdict||''}</div>
+        <div class="mat-body">${d.rationale||''}</div>
+      </div>
+    </div>
+    ${d.resolvedConcerns?.length?`<div class="sec"><div class="sec-title">Resolved concerns</div><div class="cp-list">${d.resolvedConcerns.map((c,i)=>`<div class="cp-item"><div class="cp-n">✓</div><div class="cp-txt">${c}</div></div>`).join('')}</div></div>`:''}
+    ${d.outstandingConcerns?.length?`<div class="sec"><div class="sec-title">Outstanding concerns</div><div class="cp-list">${d.outstandingConcerns.map((c,i)=>`<div class="cp-item"><div class="cp-n">!</div><div class="cp-txt">${c}</div></div>`).join('')}</div></div>`:''}
+    <div class="actions">
+      ${isLoop?`<button class="btn-a" style="border-color:var(--gold)" onclick="goStage(2)">↻ Loop back to Stage 2</button>`:''}
+      <button class="btn-a pri" onclick="goStage(7)">Proceed to final recommendation →</button>
+    </div>`;
+  S.outputs[6] = (S.outputs[6]||'') + matHtml;
+  return matHtml;
+}
+
+async function stage7() {
+  const auth = document.getElementById('s7-auth')?.value||'Credit Committee';
+  const notes = document.getElementById('s7-notes')?.value||'';
+  const ctx2 = (S.outputs[2]||'').replace(/<[^>]+>/g,' ').substring(0,1000);
+  const ctx3 = (S.outputs[3]||'').replace(/<[^>]+>/g,' ').substring(0,500);
+  const ctx4 = (S.outputs[4]||'').replace(/<[^>]+>/g,' ').substring(0,500);
+  const ctx5 = (S.outputs[5]||'').replace(/<[^>]+>/g,' ').substring(0,500);
+  const ctx6 = (S.outputs[6]||'').replace(/<[^>]+>/g,' ').substring(0,500);
+  const prompt = `${dealCtx()}${modeCalibration()}
+
+STAGE SUMMARIES:
+Credit analysis: ${ctx2}
+Clarifications: ${ctx3}
+Independent review: ${ctx4}
+Legal DD: ${ctx5}
+Client feedback: ${ctx6}
+
+SIGN-OFF AUTHORITY: ${auth}
+ADDITIONAL INSTRUCTION: ${notes}
+
+Produce the final credit committee recommendation pack.
+
+Return ONLY this JSON:
+{
+  "executiveDecisionSummary":"...",
+  "verdict":"Approve|Approve with conditions|Decline|Further information required",
+  "verdictTone":"approve|conditions|decline|info",
+  "fullRationale":"...",
+  "conditionsPrecedent":["..."],
+  "recommendedCovenants":["..."],
+  "monitoringRequirements":["..."],
+  "signOffBlock":"..."
+}`;
+  const raw = await callClaude(prompt,[],`You are the most senior credit officer at a Tier 1 SA CF boutique writing the final CC pack. JSON only.`);
+  let d; try{ d=JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch(e){ d={executiveDecisionSummary:raw,verdict:'Error',verdictTone:'',fullRationale:'',conditionsPrecedent:[],recommendedCovenants:[],monitoringRequirements:[]}; }
+  const vc = d.verdictTone==='approve'?'approve':d.verdictTone==='decline'?'decline':'';
+  return `
+    <div class="memo-hdr">
+      <div class="memo-kicker">Final recommendation · Credit committee pack · Stage 7 of 7</div>
+      <div class="memo-title">${S.deal.name}</div>
+      <div class="memo-meta">
+        <div class="mm-item">Mode <span>${MODE_LABELS[S.mode]}</span></div>
+        <div class="mm-item">Sign-off <span>${auth}</span></div>
+        <div class="mm-item">Date <span>${new Date().toLocaleDateString('en-ZA')}</span></div>
+      </div>
+    </div>
+    <div class="sec"><div class="sec-title">Executive decision summary</div><div class="sec-body">${d.executiveDecisionSummary||''}</div></div>
+    <div class="sec"><div class="sec-title">Credit decision</div>
+      <div class="rec-box ${vc}">
+        <div class="rec-lbl">Credit committee verdict</div>
+        <div class="rec-verdict">${d.verdict||''}</div>
+        <div class="rec-body">${d.fullRationale||''}</div>
+      </div>
+    </div>
+    ${d.conditionsPrecedent?.length?`<div class="sec"><div class="sec-title">Conditions precedent</div><div class="cp-list">${d.conditionsPrecedent.map((c,i)=>`<div class="cp-item"><div class="cp-n">CP${i+1}</div><div class="cp-txt">${c}</div></div>`).join('')}</div></div>`:''}
+    ${d.recommendedCovenants?.length?`<div class="sec"><div class="sec-title">Recommended covenants</div><div class="cp-list">${d.recommendedCovenants.map((c,i)=>`<div class="cp-item"><div class="cp-n">C${i+1}</div><div class="cp-txt">${c}</div></div>`).join('')}</div></div>`:''}
+    ${d.monitoringRequirements?.length?`<div class="sec"><div class="sec-title">Monitoring requirements</div><div class="cp-list">${d.monitoringRequirements.map((m,i)=>`<div class="cp-item"><div class="cp-n">M${i+1}</div><div class="cp-txt">${m}</div></div>`).join('')}</div></div>`:''}
+    ${d.signOffBlock?`<div class="sec"><div class="sec-title">Sign-off block</div><div class="sec-body" style="font-family:var(--mono);font-size:12px;">${d.signOffBlock}</div></div>`:''}
+    <div class="actions">
+      <button class="btn-a pri" onclick="copyOut()">Copy full CC pack</button>
+      <button class="btn-a" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn-a" onclick="newDeal()">New deal</button>
+    </div>`;
+}
+
+// ── LOADING ──────────────────────────────────────────────────────
+let stepTimer;
+function showLoading(on) {
+  document.getElementById('loading').className = on?'loading on':'loading';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('out').className = 'out';
+  if (on) document.querySelectorAll('.btn-run').forEach(b=>b.disabled=true);
+  else document.querySelectorAll('.btn-run').forEach(b=>b.disabled=false);
+  if (!on && stepTimer) clearInterval(stepTimer);
+}
+function animateSteps(steps) {
+  let i=0;
+  document.getElementById('lsteps').innerHTML = steps.map(s=>`<div class="lstep"><span>○</span>${s}</div>`).join('');
+  document.getElementById('llabel').textContent = steps[0]+'...';
+  stepTimer = setInterval(()=>{
+    i=Math.min(i+1,steps.length-1);
+    const els = document.querySelectorAll('.lstep');
+    els.forEach((el,j)=>{ el.className='lstep'+(j<i?' done':j===i?' act':''); el.querySelector('span').textContent=j<i?'✓':j===i?'●':'○'; });
+    document.getElementById('llabel').textContent = steps[i]+'...';
+  },900);
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function copyOut() { navigator.clipboard.writeText(document.getElementById('out').innerText).then(()=>alert('Copied to clipboard')); }
+function newDeal() { Object.assign(S,{stage:1,mode:'orig',deal:{name:'',sector:'',ftype:'',amount:'',jurisdiction:'SA',context:''},files:{},cfNotes:'',cfFiles:[],outputs:{},stagesDone:new Set()}); fetchedData=[]; document.getElementById('dealMode').value='orig'; document.getElementById('dealStrip').style.display='none'; goStage(1); }
+
+// ── INIT ─────────────────────────────────────────────────────────
+renderSidebar();
+renderMain();
+</script>
+</body>
+</html>
