@@ -222,11 +222,16 @@ body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:
     <div class="hdr-sub">Tier 1 CF Boutique · SA Corporate Finance</div>
   </div>
   <div class="hdr-r">
+    <select class="deal-mode-sel" id="deal-selector" onchange="if(this.value)loadDealFromList(this.value)" style="max-width:220px;">
+      <option value="">— Load saved deal —</option>
+    </select>
     <select class="deal-mode-sel" id="dealMode" onchange="updateDealMode()">
       <option value="orig">New origination</option>
       <option value="restr">Debt restructure</option>
       <option value="turn">Turnaround viability</option>
     </select>
+    <button class="deal-mode-sel" onclick="saveDealToList()" style="cursor:pointer;background:var(--gold);color:var(--ink);border-color:var(--gold);">Save deal</button>
+    <button class="deal-mode-sel" onclick="newDeal()" style="cursor:pointer;">New deal</button>
     <div class="hdr-badge">7-STAGE WORKFLOW</div>
   </div>
 </div>
@@ -278,18 +283,73 @@ body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:
 
 <script>
 // ── GLOBAL STATE ────────────────────────────────────────────────
-const S = {
-  stage: 1,
-  mode: 'orig',
-  deal: { name:'', sector:'', ftype:'', amount:'', jurisdiction:'SA', context:'' },
-  files: {},       // keyed by stage number
-  cfNotes: '',
-  cfFiles: [],
-  outputs: {},     // cached AI outputs per stage
-  stagesDone: new Set(),
-};
-
 const MODE_LABELS = { orig:'New origination', restr:'Debt restructure', turn:'Turnaround viability' };
+const STORAGE_KEY = 'creditdesk_current';
+const DEALS_KEY   = 'creditdesk_deals';
+
+function defaultState() {
+  return { stage:1, mode:'orig', deal:{name:'',sector:'',ftype:'',amount:'',jurisdiction:'SA',context:''}, files:{}, cfNotes:'', cfFiles:[], outputs:{}, stagesDone:[] };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const p = JSON.parse(raw);
+    p.stagesDone = new Set(p.stagesDone||[]);
+    p.files = p.files||{};
+    return p;
+  } catch(e) { return defaultState(); }
+}
+
+function saveState() {
+  try {
+    const t = Object.assign({}, S, {stagesDone:[...S.stagesDone]});
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
+  } catch(e) { console.warn('Save failed',e); }
+}
+
+function getSavedDeals() {
+  try { return JSON.parse(localStorage.getItem(DEALS_KEY)||'[]'); }
+  catch(e) { return []; }
+}
+
+function saveDealToList() {
+  if (!S.deal.name) return;
+  const deals = getSavedDeals();
+  const id = S.dealId || Date.now().toString();
+  S.dealId = id;
+  const idx = deals.findIndex(d=>d.id===id);
+  const entry = { id, name:S.deal.name, sector:S.deal.sector, mode:S.mode, amount:S.deal.amount, savedAt:new Date().toISOString(), stagesDone:[...S.stagesDone], snapshot:Object.assign({},S,{stagesDone:[...S.stagesDone]}) };
+  if (idx>=0) deals[idx]=entry; else deals.unshift(entry);
+  localStorage.setItem(DEALS_KEY, JSON.stringify(deals.slice(0,20)));
+  saveState();
+  renderDealSelector();
+}
+
+function loadDealFromList(id) {
+  const deals = getSavedDeals();
+  const entry = deals.find(d=>d.id===id);
+  if (!entry) return;
+  Object.assign(S, entry.snapshot);
+  S.stagesDone = new Set(entry.snapshot.stagesDone||[]);
+  S.dealId = id;
+  document.getElementById('dealMode').value = S.mode;
+  updateStrip();
+  goStage(S.stage||1);
+  renderDealSelector();
+}
+
+function renderDealSelector() {
+  const deals = getSavedDeals();
+  const sel = document.getElementById('deal-selector');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Load saved deal —</option>' +
+    deals.map(d=>'<option value="'+d.id+'">'+d.name+' · '+(MODE_LABELS[d.mode]||d.mode)+' · Stages done: '+(d.stagesDone||[]).length+'</option>').join('');
+}
+
+const S = loadState();
+if (!S.stagesDone||(!(S.stagesDone instanceof Set))) S.stagesDone = new Set();
 
 // ── NAVIGATION ───────────────────────────────────────────────────
 function goStage(n) {
@@ -460,6 +520,7 @@ function saveDeal() {
   updateStrip();
   S.stagesDone.add(1);
   S.outputs[1] = buildStage1Output();
+  saveDealToList();
   goStage(2);
 }
 
@@ -545,6 +606,7 @@ async function runStage(n, sub) {
     else if (n===7) html = await stage7();
     S.outputs[n] = html;
     S.stagesDone.add(n);
+    saveDealToList();
     showLoading(false);
     const out = document.getElementById('out');
     out.innerHTML = S.outputs[n];
@@ -942,9 +1004,12 @@ function animateSteps(steps) {
 
 // ── UTILS ────────────────────────────────────────────────────────
 function copyOut() { navigator.clipboard.writeText(document.getElementById('out').innerText).then(()=>alert('Copied to clipboard')); }
-function newDeal() { Object.assign(S,{stage:1,mode:'orig',deal:{name:'',sector:'',ftype:'',amount:'',jurisdiction:'SA',context:''},files:{},cfNotes:'',cfFiles:[],outputs:{},stagesDone:new Set()}); fetchedData=[]; document.getElementById('dealMode').value='orig'; document.getElementById('dealStrip').style.display='none'; goStage(1); }
+function newDeal() { Object.assign(S,{stage:1,mode:'orig',deal:{name:'',sector:'',ftype:'',amount:'',jurisdiction:'SA',context:''},files:{},cfNotes:'',cfFiles:[],outputs:{},stagesDone:new Set(),dealId:null}); fetchedData=[]; localStorage.removeItem(STORAGE_KEY); document.getElementById('dealMode').value='orig'; document.getElementById('dealStrip').style.display='none'; goStage(1); }
 
 // ── INIT ─────────────────────────────────────────────────────────
+if (S.deal && S.deal.name) { updateStrip(); }
+if (S.mode) document.getElementById('dealMode').value = S.mode;
+renderDealSelector();
 renderSidebar();
 renderMain();
 </script>
