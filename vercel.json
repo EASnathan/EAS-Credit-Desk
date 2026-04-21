@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/analyse.js": {
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/analyse",
+      "dest": "/api/analyse",
+      "methods": ["POST", "OPTIONS"],
+      "headers": {
+        "x-vercel-max-body-size": "10mb"
+      }
+    }
+  ]
+}
