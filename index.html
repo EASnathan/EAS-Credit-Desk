@@ -543,7 +543,7 @@ async function runStage(n, sub) {
     else if (n===6 && sub==='findings') html = await stage6findings();
     else if (n===6 && sub==='materiality') html = await stage6materiality();
     else if (n===7) html = await stage7();
-    S.outputs[n] = (S.outputs[n]||'') + html;
+    S.outputs[n] = html;
     S.stagesDone.add(n);
     showLoading(false);
     const out = document.getElementById('out');
